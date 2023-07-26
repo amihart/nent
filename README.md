@@ -28,4 +28,3 @@ As an interesting fact, it appears that the normalized Shannon entropy of N, whe
 The result of `nent` and `ent` will both often appear the same when a confidence level of 8 is automatically chosen, however, because `nent` will, unless explicitly specified otherwise with the `-L` flag, choose the confidence level based on the number of samples. This means that `nent` will only choose a confidence level of 8 for testing if there is sufficient samples for a reliable test of 8, which with that many samples will cause the two values mentioned in the last paragraph to converge.
 
 If this is being used to test for the quality of randomness in a file, I recommend inputting a 2 MB file, which will automatically choose the highest confidence level currently supported, of 15. A score >= 99% would be a pretty good distribution.
-
