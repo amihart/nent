@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 #include <math.h>
 #include <time.h>
 #include <sys/sysinfo.h>
@@ -148,34 +149,87 @@ const uint64_t SIZES[] =
     425984,
     917504,
     1966080,
-    4194304,
-    8912896,
-    18874368,
-    39845888,
-    83886080,
-    176160768,
-    369098752,
-    771751936,
-    1610612736,
-    3355443200,
-    6979321856,
-    14495514624,
-    30064771072,
-    62277025792,
-    128849018880,
-    266287972352,
-    549755813888
+//    4194304,
+//    8912896,
+//    18874368,
+//    39845888,
+//    83886080,
+//    176160768,
+//    369098752,
+//    771751936,
+//    1610612736,
+//    3355443200,
+//    6979321856,
+//    14495514624,
+//    30064771072,
+//    62277025792,
+//    128849018880,
+//    266287972352,
+//    549755813888
 };
 
+void err(uint8_t showInvalid)
+{
+    if (showInvalid)
+    {
+        fprintf(stderr, "nent: Invalid option.\n");
+    }
+    fprintf(stderr, "nent --  Calculate normalized Shannon entropy of file.\n");
+    fprintf(stderr, "         Call with nent [options] [input-file]\n");
+    fprintf(stderr, "\n");
+    fprintf(stderr, "         Options:   -L Force a specific confidence level.\n");
+}
 uint64_t main(uint64_t argc, uint8_t **args)
 {
-    if (argc != 2)
+    FILE *f;
+    if (argc != 2 && argc != 4)
     {
-        fprintf(stderr, "You have to specify a file.\n");
-        return 1;
+        if (argc == 1)
+        {
+            err(0);
+            return 0;
+        }
+        else
+        {
+            err(1);
+            return 1;
+        }
+    }
+    if (strcmp(args[1], "--help") == 0)
+    {
+        err(0);
+        return 0;
     }
 
-    FILE *f = fopen(args[1], "r");
+    uint8_t forceLevel = 0;
+    if (argc == 4)
+    {
+        if (strcmp(args[1], "-L") == 0)
+        {
+            forceLevel = atoi(args[2]);
+            f = fopen(args[3], "r");
+        }
+        else if (strcmp(args[2], "-L") == 0)
+        {
+            forceLevel = atoi(args[3]);
+            f = fopen(args[1], "r'");
+        }
+        else
+        {
+            err(1);
+            return 1;
+        }
+        if (forceLevel > sizeof(SIZES) / sizeof(uint64_t) + 1)
+        {
+            fprintf(stderr, "The specified confidence level is too high!\n");
+            return 1;
+        }
+    }
+    else
+    {
+        f = fopen(args[1], "r");
+    }
+
     if (!f)
     {
         fprintf(stderr, "Failed to open the specified file.\n");
@@ -194,13 +248,20 @@ uint64_t main(uint64_t argc, uint8_t **args)
 
     uint8_t i;
     uint8_t level = 0;
-    for (i = 0; i < sizeof(SIZES) / sizeof(uint64_t); i++)
+    if (forceLevel == 0)
     {
-        if (flen < SIZES[i])
+        for (i = 0; i < sizeof(SIZES) / sizeof(uint64_t); i++)
         {
-            break;
+            if (flen < SIZES[i])
+            {
+                break;
+            }
+            level++;
         }
-        level++;
+    }
+    else
+    {
+        level = forceLevel;
     }
 
     //If it takes up less than an 8th of our free RAM,
@@ -212,7 +273,7 @@ uint64_t main(uint64_t argc, uint8_t **args)
     {
         uint8_t *b = malloc(flen);
         fread(b, 1, flen, f);
-        printf("%.2f%% L%i\n", EntropyTest(b, flen, level) * 100.0, level);
+        printf("Normalized Shannon Entropy = %.2f%% at a confidence level of %i.\n", EntropyTest(b, flen, level) * 100.0, level);
         free(b);
     }
     else
@@ -221,10 +282,3 @@ uint64_t main(uint64_t argc, uint8_t **args)
     }
     fclose(f);
 }
-
-
-
-
-
-
-
